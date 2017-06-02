@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="apple-mobile-web-app-capable" content="yes"/>
+	<meta name="viewport" content="initial-scale = 1.0, user-scalable = no"/>
+	<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+	<link rel="apple-touch-icon" href="apple-touch-icon.png" size="152x152"/>
+	<script src="js/Chart.bundle.min.js"></script>
+	<script src="js/jquery-3.2.1.min.js"></script> <!--Optional-->
+
+	<body>
+		<canvas id="myLineChart" width="740" height="200"></canvas>
+	</body>
+<script>
+  function drawLineChart() {
+
+    // Add a helper to format timestamp data
+    Date.prototype.formatMMDDYYYY = function() {
+        return (this.getMonth() + 1) +
+        "/" +  this.getDate() +
+        "/" +  this.getFullYear();
+    }
+
+    // Add a helper to format timestamp data
+    Date.prototype.formatTime = function() {
+       return (this.getDate() + 1) +
+        "." +  this.getMonth() +
+        "." +  this.getFullYear() + " " + this.getHours() +
+	  ":" +  this.getMinutes() +
+	  ":" +  this.getSeconds();
+   }
+
+    $.getJSON("http://192.168.178.40/heating/vbus-server?format=json&timespan=-24 hours", function (results) {
+
+      // Split timestamp and data into separate arrays
+      var labels = [], temp1=[], temp2=[];
+      $.each(results, function() {
+        $.each(this, function(i, packet) {
+          labels.push(packet.timestamp);
+          temp1.push(packet.temp1);
+	  temp2.push(packet.temp2);
+        });
+       });
+
+      // Create the chart.js data structure using 'labels' and 'data'
+      var tempData = {
+	type: 'line',
+        data : {
+         datasets : [{
+            backgroundColor       : "rgba(255, 64, 0, 0.2)",
+            borderColor           : "rgba(255, 64, 0, 1)",
+            pointBackgroundColor  : "rgba(255, 64, 0, 1)",
+            pointBorderColor      : "#fff",
+            pointHoverBackgroundColor : "#fff",
+            pointHoverBorderColor : "rgba(255, 64, 0, 1)",
+            data                  : temp1,
+	    label : 'Temperatur Solarzelle'
+         },
+	 {
+	    fillColor: "rgba(220,220,220,0.2)",
+            strokeColor: "rgba(220,220,220,1)",
+            pointColor: "rgba(220,220,220,1)",
+            pointStrokeColor: "#fff",
+            pointHighlightFill: "#fff",
+            pointHighlightStroke: "rgba(220,220,220,1)",
+            data: temp2,
+	    label: "Temperatur Wasserspeicher"
+	 }],
+	 labels : labels
+	},
+	options: {
+	  scales: {
+            xAxes: [{
+                type: 'time',
+		time: {
+                    displayFormats: {
+                        hour: 'DD.MM kk:mm',
+			minute: 'kk:mm:ss',
+			second: 'kk:mm:ss'
+                    }
+                }
+            }],
+	    yAxes: [{
+                ticks: {
+                    beginAtZero: true,
+		    suggestedMax: 100
+                }
+            }]
+          },
+          elements: {
+               line: {
+                  tension: 0, // disables bezier curves
+               }
+          }
+        }
+      };
+
+      // Get the context of the canvas element we want to select
+      var ctx = document.getElementById("myLineChart").getContext("2d");
+
+      // Instantiate a new chart
+      var myLineChart = new Chart(ctx, tempData);
+        //bezierCurve: false
+    });
+  }
+
+  drawLineChart();
+</script>
+
+</html>
+
